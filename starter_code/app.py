@@ -14,6 +14,7 @@ from flask_wtf import Form
 from forms import *
 import sys 
 from flask_migrate import Migrate
+import datetime
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -28,11 +29,18 @@ migrate= Migrate(app,db)
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
-shows=db.Table('shows',
-    db.Column('artist_id', db.Integer, db.ForeignKey('artists.id'), primary_key=True),
-    db.Column('venues_id', db.Integer, db.ForeignKey('venues.id'),primary_key=True ),
-    db.Column('day_show', db.DateTime, nullable=False,)
-)
+
+class Show(db.Model):
+  __tablename__ = 'shows'
+  id = db.Column(db.Integer, primary_key=True)
+  #columns with ID
+  artist_id = db.Column( db.Integer, db.ForeignKey('artists.id'))
+  venues_id = db.Column( db.Integer, db.ForeignKey('venues.id' ))
+  # extra data: the date when will be the show
+  day_show= db.Column( db.DateTime, nullable=False)
+  # association
+  venues= db.relationship('Venue',backref=db.backref('show_venues',  cascade="all, delete"))
+  artists= db.relationship('Artist',backref=db.backref('show_artists',  cascade="all, delete"))
 
 class Venue(db.Model):
     __tablename__ = 'venues'
@@ -51,7 +59,7 @@ class Venue(db.Model):
     seeking_talent=db.Column(db.Boolean, default=False)
     seeking_description=db.Column(db.String(500))
     #relation
-    artists= db.relationship('Artist', secondary=shows,  backref=db.backref('venues', lazy=True))
+    #shows_venue=db.relationship('Show', backref='venues', lazy=True)
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
 class Artist(db.Model):
@@ -69,6 +77,8 @@ class Artist(db.Model):
     website=db.Column(db.String(120))
     seeking_venue=db.Column(db.Boolean, default=False)
     seeking_description=db.Column(db.String(500))
+    #relation
+    #shows_artist=db.relationship('Show', backref='artists', lazy=True)
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -104,27 +114,42 @@ def index():
 def venues():
   # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
-    "city": "San Francisco",
-    "state": "CA",
-    "venues": [{
-      "id": 1,
-      "name": "The Musical Hop",
-      "num_upcoming_shows": 0,
-    }, {
-      "id": 3,
-      "name": "Park Square Live Music & Coffee",
-      "num_upcoming_shows": 1,
-    }]
-  }, {
-    "city": "New York",
-    "state": "NY",
-    "venues": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }]
+
+  cities=[]
+  data=[]
+
+  all_raw=Venue.query
+
+  for raw in all_raw:
+    cities.append(raw.city)
+  
+  cities=set(cities)
+  
+  for city in cities:
+    
+    venues_obj={
+      "city": city
+    }
+    place=[]
+    
+    infoS=Venue.query.filter(Venue.city==city).order_by(Venue.name).order_by(Venue.city)
+
+    for info in infoS:
+      venues_obj['state']= info.state
+
+      info_venue={}
+      info_venue['id']=info.id
+      info_venue['name']=info.name
+
+      upcoming_shows=Show.query.filter(Show.venues_id==info.id).filter(Show.day_show >= datetime.datetime.now())
+      num_upcoming_shows= upcoming_shows.count()
+
+      info_venue['num_upcoming_shows']=num_upcoming_shows
+      place.append(info_venue)
+    
+    venues_obj['venues']= place
+    data.append(venues_obj)
+  
   return render_template('pages/venues.html', areas=data);
 
 @app.route('/venues/search', methods=['POST'])
