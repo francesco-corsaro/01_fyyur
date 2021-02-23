@@ -185,7 +185,9 @@ def show_venue(venue_id):
   # per dividerli in base alla data  in past and up coming
   # e metto una variabile per contarli
 
+  # here we get values of Venue by ID
   data_venue=Venue.query.filter(Venue.id==venue_id).first()
+  
   result={
     "id": data_venue.id ,
     "name": data_venue.name,
@@ -201,34 +203,35 @@ def show_venue(venue_id):
     "image_link":data_venue.image_link
   }
 
-  
-  data_show= Show.query.join(Artist).filter(Show.venues_id==venue_id)
+  # we get values of show with artisti
+  data_show= db.session.query(Show.artist_id, Show.day_show, Artist.id, Artist.name, Artist.image_link).join(Artist).filter(Show.venues_id==venue_id).all()
   past_shows=[]
   past_shows_count=0
   upcoming_shows=[]
   upcoming_shows_count=0
-
-  for row_show in data_show:
-    for row_artist in row_show.artists:
-      show_event={}
-      show_event["artist_id"]=row_show.artist_id
-      show_event["artist_name"]=row_artist.name
-      show_event["artist_image_link"]=row_artist.image_link
-      show_event["start_time"]=row_show.day_show
-      if row_show.day_show >= datetime.datetime.now():
-        past_shows_count+=1
-        past_shows.append(show_event )
-      else:
-        upcoming_shows_count+=1
-        upcoming_shows.append(show_event)
+  
+  # we assign values for the past and upcoming show
+  for row in data_show:
     
+    show_event={}
+    show_event["artist_id"]=row.artist_id
+    show_event["artist_name"]=row.name
+    show_event["artist_image_link"]=row.image_link
+    show_event["start_time"]=row.day_show.strftime("%m/%d/%Y, %H:%M")
+    if row.day_show >= datetime.datetime.now():
+      past_shows_count+=1
+      past_shows.append(show_event )
+    else:
+      upcoming_shows_count+=1
+      upcoming_shows.append(show_event)
+
+  # append the values to object to send
   result["past_shows"]=past_shows
   result["upcoming_shows"]=upcoming_shows
   result["past_shows_count"]=past_shows_count
-  result["upcoming_shows_count"]=upcoming_shows_count
+  result["upcoming_showss_count"]=upcoming_shows_count
 
-  #data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
-  return render_template('pages/show_venue.html', venue=list(result))
+  return render_template('pages/show_venue.html', venue=result)
 
 #  Create Venue
 #  ----------------------------------------------------------------
