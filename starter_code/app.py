@@ -198,7 +198,7 @@ def show_venue(venue_id):
     "phone": data_venue.phone,
     "website": data_venue.website,
     "facebook_link": data_venue.facebook_link,
-    "seeking_talent": False,
+    "seeking_talent": data_venue.seeking_talent,
     "seeking_description": data_venue.seeking_description,
     "image_link":data_venue.image_link
   }
@@ -248,15 +248,24 @@ def create_venue_submission():
 
   error=False
   try:
-    name=request.form['name']
+    form = VenueForm()
+    name=form.name.data
     new_row = Venue(name=name)
     
-    new_row.city=request.form.get('city')
-    new_row.state=request.form.get('state')
-    new_row.address=request.form.get('address')
-    new_row.phone=request.form.get('phone')
-    new_row.genres=request.form.get('genres')
-    new_row.facebook_link=request.form.get('facebook_link')
+    new_row.city=form.city.data
+    new_row.state=form.state.data
+    new_row.address=form.address.data
+    new_row.phone=form.phone.data
+    new_row.genres=form.genres.data
+    new_row.facebook_link=form.facebook_link.data
+    new_row.image_link=form.image_link.data
+    new_row.website=form.website.data
+    if form.seeking_talent.data == 'True':
+      new_row.seeking_talent=True
+    else:
+      new_row.seeking_talent=False
+    new_row.seeking_description=form.seeking_description.data
+
 
     db.session.add(new_row)
     db.session.commit()
@@ -284,7 +293,19 @@ def delete_venue(venue_id):
 
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
-  return None
+  try:
+    venue_delete=Venue.query.get(venue_id)
+    db.session.delete(venue_delete)
+    db.session.commit()
+  except:
+    db.session.rollback()
+    print(sys.exc_info())
+    flash('An error occurred. Venue ' + venue_delete.name + ' could not be deleted.')
+  finally:
+    db.session.close()
+    
+  return render_template('pages/home.html')
+  
 
 #  Artists
 #  ----------------------------------------------------------------
