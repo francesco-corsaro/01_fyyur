@@ -8,7 +8,7 @@
         </h1>
         <!-- BUTTON TO DELETE VENUE-->
         <button type="button" id="btnDelete" class="btn btn-danger" data-id="{{ venue.id }}">Delete venue</button>
-        <button type="button" id="btnEdit" class="btn btn-primary" data-id="{{ venue.id }}">Edit venue</button>
+        <a id="btnEdit" class="btn btn-primary" href="/venues/{{ venue.id }}/edit">Edit venue</a>
         <p class="subtitle">
             ID: {{ venue.id }}
         </p>

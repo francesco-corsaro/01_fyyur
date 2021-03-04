@@ -88,7 +88,7 @@ class VenueForm(Form):
     
     genres = SelectMultipleField(
         # TODO implement enum restriction
-        'genres', validators=[DataRequired()],
+        'genres',
         choices=[
             ('Alternative', 'Alternative'),
             ('Blues', 'Blues'),
@@ -122,7 +122,7 @@ class VenueForm(Form):
         'image_link', validators=[URL(),DataRequired(),]
     )
     seeking_talent=RadioField(
-        'seeking_talent', default='False',
+        'seeking_talent', 
         choices=[
             ('True','True'),
             ('False','False'),
@@ -204,7 +204,7 @@ class ArtistForm(Form):
     )
     genres = SelectMultipleField(
         # TODO implement enum restriction
-        'genres', validators=[DataRequired()],
+        'genres', 
         choices=[
             ('Alternative', 'Alternative'),
             ('Blues', 'Blues'),
@@ -235,5 +235,16 @@ class ArtistForm(Form):
         # TODO implement enum restriction
         'website', validators=[URL()]
     )
+    image_link = StringField(
+        'image_link', validators=[URL(),DataRequired(),]
+    )
+    seeking_venue=RadioField(
+        'seeking_talent',
+        choices=[
+            ('True','Yes'),
+            ('False','No'),
+        ]
+    )
+    seeking_description=TextAreaField('seeking_description',)
 
 # TODO IMPLEMENT NEW ARTIST FORM AND NEW SHOW FORM
