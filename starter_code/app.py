@@ -63,22 +63,23 @@ class Venue(db.Model):
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
 class Artist(db.Model):
-    __tablename__ = 'artists'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    genres = db.Column(db.ARRAY(db.String))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    # here implement new fields
-    website=db.Column(db.String(120))
-    seeking_venue=db.Column(db.Boolean, default=False)
-    seeking_description=db.Column(db.String(500))
-    #relation
-    #shows_artist=db.relationship('Show', backref='artists', lazy=True)
+  __tablename__ = 'artists'
+ 
+  id = db.Column(db.Integer, primary_key=True)
+  name = db.Column(db.String)
+  city = db.Column(db.String(120))
+  state = db.Column(db.String(120))
+  phone = db.Column(db.String(120))
+  genres = db.Column(db.ARRAY(db.String))
+  image_link = db.Column(db.String(500))
+  facebook_link = db.Column(db.String(120))
+  # here implement new fields
+  website=db.Column(db.String(120))
+  seeking_venue=db.Column(db.Boolean, default=False)
+  seeking_description=db.Column(db.String(500))
+    
+    
 
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -555,42 +556,37 @@ def shows():
   # displays list of shows at /shows
   # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
-    "venue_id": 1,
-    "venue_name": "The Musical Hop",
-    "artist_id": 4,
-    "artist_name": "Guns N Petals",
-    "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
-    "start_time": "2019-05-21T21:30:00.000Z"
-  }, {
-    "venue_id": 3,
-    "venue_name": "Park Square Live Music & Coffee",
-    "artist_id": 5,
-    "artist_name": "Matt Quevedo",
-    "artist_image_link": "https://images.unsplash.com/photo-1495223153807-b916f75de8c5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=334&q=80",
-    "start_time": "2019-06-15T23:00:00.000Z"
-  }, {
-    "venue_id": 3,
-    "venue_name": "Park Square Live Music & Coffee",
-    "artist_id": 6,
-    "artist_name": "The Wild Sax Band",
-    "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-    "start_time": "2035-04-01T20:00:00.000Z"
-  }, {
-    "venue_id": 3,
-    "venue_name": "Park Square Live Music & Coffee",
-    "artist_id": 6,
-    "artist_name": "The Wild Sax Band",
-    "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-    "start_time": "2035-04-08T20:00:00.000Z"
-  }, {
-    "venue_id": 3,
-    "venue_name": "Park Square Live Music & Coffee",
-    "artist_id": 6,
-    "artist_name": "The Wild Sax Band",
-    "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-    "start_time": "2035-04-15T20:00:00.000Z"
-  }]
+  event_query=db.session.\
+    query(Show.venues_id, Venue.name, Show.artist_id, Artist.name.label('artist_name'), Artist.image_link, Show.day_show).\
+    join(Venue, Show.venues_id== Venue.id).\
+    join(Artist, Show.artist_id==Artist.id).\
+    filter(Show.day_show>=datetime.datetime.now()).\
+    order_by(Show.day_show).\
+    all()
+  
+  data=[]
+  """
+  print(event_query)
+  data=[]
+  for obj in event_query:
+    print(obj)
+    for x in obj.keys():
+
+      print(x)
+  """
+
+  for row in event_query:
+    show_event={
+
+      "venue_id":row.venues_id,
+      "venue_name": row.name,
+      "artist_id":row.artist_id,
+      "artist_name":row.artist_name,
+      "artist_image_link":row.image_link,
+      "start_time":row.day_show.strftime("%m/%d/%Y, %H:%M"),
+      }
+    data.append(show_event ) 
+  
   return render_template('pages/shows.html', shows=data)
 
 @app.route('/shows/create')
