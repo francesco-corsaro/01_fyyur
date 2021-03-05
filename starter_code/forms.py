@@ -241,8 +241,8 @@ class ArtistForm(Form):
     seeking_venue=RadioField(
         'seeking_talent',
         choices=[
-            ('True','Yes'),
-            ('False','No'),
+            (True,'Yes'),
+            (False,'No'),
         ]
     )
     seeking_description=TextAreaField('seeking_description',)

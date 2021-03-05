@@ -506,51 +506,41 @@ def create_artist_submission():
   # called upon submitting the new artist listing form
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
-  form = ArtistForm(request.form, meta={'csrf': False})
-  #error=False
-  if form.validate():
-    try:
-      #form = ArtistForm()
+  
+  error=False
+  try:
 
-      name=form.name.data
-      new_row = Artist(name=name)
-      
-      new_row.city=form.city.data
-      new_row.state=form.state.data
-      
-      new_row.phone=form.phone.data
-      new_row.genres=form.genres.data
-      new_row.facebook_link=form.facebook_link.data
-      new_row.image_link=form.image_link.data
-      new_row.website=form.website.data
-      if new_row.seeking_venue.data == 'True':
-        new_row.seeking_venue=True
-      else:
-        new_row.seeking_venue=False
-      new_row.seeking_description=form.seeking_description.data
+    form = ArtistForm()
 
+    name=form.name.data
+    new_row = Artist(
+      name=name,
+      city=form.city.data,
+      state=form.state.data,
+      phone=form.phone.data,
+      genres=form.genres.data,
+      facebook_link=form.facebook_link.data,
+      image_link=form.image_link.data,
+      website=form.website.data,
+      seeking_venue=True if form.seeking_venue.data =='True' else False,
+      seeking_description=form.seeking_description.data
+    )
 
-      db.session.add(new_row)
-      db.session.commit()
-    except:
-      error=True
-      db.session.rollback()
-      print(sys.exc_info())
-      flash('An error occurred. Artist ' + new_row.name + ' could not be listed.')
-    finally:
-      db.session.close()
-    if error:
-      abort(400)
-    else:
-      # on successful db insert, flash success
-      flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    db.session.add(new_row)
+    db.session.commit()
+  except:
+    error=True
+    db.session.rollback()
+    print(sys.exc_info())
+    flash('An error occurred. Artist ' + new_row.name + ' could not be listed.')
+  finally:
+    db.session.close()
+  if error:
+    abort(400)
   else:
-    message = []
-
-    for field, err in form.errors.items():
-      message.append(field + ' ' + '|'.join(err))
-
-    flash('Errors ' + str(message))
+      # on successful db insert, flash success
+    flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    
     
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
