@@ -601,10 +601,33 @@ def create_show_submission():
   # TODO: insert form data as a new Show record in the db, instead
 
   # on successful db insert, flash success
-  flash('Show was successfully listed!')
+  #flash('Show was successfully listed!')
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Show could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+
+  form = ShowForm(request.form, meta={'csrf': False})
+  
+  if form.validate():
+    try:
+      new_show= Show()
+      form.populate_obj(new_show)
+      db.session.add(new_show)
+      db.session.commit()
+      flash('Show was successfully listed!')
+    except ValueError as e:
+      print(e)
+      flash('An error occurred. Show could not be listed.')
+      db.session.rollback()
+    finally:
+      db.session.close()
+  else:
+    message=[]
+    for field, err, in form.errors.items():
+      message.append(field+' '+'|'.join(err))
+      flash('Errors ' + str(message))
+
+
   return render_template('pages/home.html')
 
 @app.errorhandler(404)

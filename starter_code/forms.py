@@ -7,10 +7,14 @@ class ShowForm(Form):
     artist_id = StringField(
         'artist_id'
     )
-    venue_id = StringField(
+    # in my model its name is venues with s
+
+    venues_id = StringField(
         'venue_id'
     )
-    start_time = DateTimeField(
+    #in my modle its name is day_show
+    # original verson start_time
+    day_show = DateTimeField(
         'start_time',
         validators=[DataRequired()],
         default= datetime.today()
