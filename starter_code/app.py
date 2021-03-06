@@ -116,36 +116,39 @@ def venues():
   # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
 
-  cities=[]
   data=[]
 
-  all_raw=Venue.query
+  # db query
+  all_venues=Venue.query
+  all_shows=Show.query
 
-  for raw in all_raw:
-    cities.append(raw.city)
-  
-  cities=set(cities)
-  
-  for city in cities:
+  cities=list(dict.fromkeys([x.city for x in all_venues]))
+
+  cities.sort()
+
+  for city in cities :
     
     venues_obj={
       "city": city
     }
     place=[]
     
-    infoS=Venue.query.filter(Venue.city==city).order_by(Venue.name).order_by(Venue.city)
+    infoS=all_venues.filter(Venue.city==city).order_by(Venue.name)
 
     for info in infoS:
       venues_obj['state']= info.state
 
-      info_venue={}
-      info_venue['id']=info.id
-      info_venue['name']=info.name
+      info_venue={
+        'id':info.id,
+        'name':info.name
+      }
+      
+      upcoming_shows=all_shows.\
+        filter(Show.venues_id==info.id).\
+        filter(Show.day_show >= datetime.datetime.now())
 
-      upcoming_shows=Show.query.filter(Show.venues_id==info.id).filter(Show.day_show >= datetime.datetime.now())
-      num_upcoming_shows= upcoming_shows.count()
+      info_venue['num_upcoming_shows']= upcoming_shows.count()
 
-      info_venue['num_upcoming_shows']=num_upcoming_shows
       place.append(info_venue)
     
     venues_obj['venues']= place
