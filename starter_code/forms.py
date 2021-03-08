@@ -9,7 +9,7 @@ class ShowForm(Form):
     )
     # in my model its name is venues with s
 
-    venues_id = StringField(
+    venue_id = StringField(
         'venue_id'
     )
     #in my modle its name is day_show

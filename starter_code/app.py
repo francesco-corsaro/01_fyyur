@@ -35,7 +35,7 @@ class Show(db.Model):
   id = db.Column(db.Integer, primary_key=True)
   #columns with ID
   artist_id = db.Column( db.Integer, db.ForeignKey('artists.id'))
-  venues_id = db.Column( db.Integer, db.ForeignKey('venues.id' ))
+  venue_id = db.Column( db.Integer, db.ForeignKey('venues.id' ))
   # extra data: the date when will be the show
   day_show= db.Column( db.DateTime, nullable=False)
   # association
@@ -144,7 +144,7 @@ def venues():
       }
       
       upcoming_shows=all_shows.\
-        filter(Show.venues_id==info.id).\
+        filter(Show.venue_id==info.id).\
         filter(Show.day_show >= datetime.datetime.now())
 
       info_venue['num_upcoming_shows']= upcoming_shows.count()
@@ -169,7 +169,7 @@ def search_venues():
     my_obj= {}
     my_obj['id']=corrispondence.id
     my_obj['name']=corrispondence.name
-    upcoming_shows=Show.query.filter(Show.venues_id == corrispondence.id )
+    upcoming_shows=Show.query.filter(Show.venue_id == corrispondence.id )
     my_obj['num_upcoming_shows']=upcoming_shows.count()
     data.append(my_obj)
   
@@ -208,7 +208,7 @@ def show_venue(venue_id):
   }
 
   # we get values of show with artisti
-  data_show= db.session.query(Show.artist_id, Show.day_show, Artist.id, Artist.name, Artist.image_link).join(Artist).filter(Show.venues_id==venue_id).all()
+  data_show= db.session.query(Show.artist_id, Show.day_show, Artist.id, Artist.name, Artist.image_link).join(Artist).filter(Show.venue_id==venue_id).all()
   past_shows=[]
   past_shows_count=0
   upcoming_shows=[]
@@ -367,7 +367,7 @@ def show_artist(artist_id):
     "image_link":data_artist.image_link
   }
 
-  artist_shows=db.session.query(Venue.id, Venue.name, Venue.image_link, Show.day_show, Show.artist_id ,Show.venues_id).join(Venue).filter(Show.artist_id==artist_id).all()
+  artist_shows=db.session.query(Venue.id, Venue.name, Venue.image_link, Show.day_show, Show.artist_id ,Show.venue_id).join(Venue).filter(Show.artist_id==artist_id).all()
 
   past_shows=[]
   past_shows_count=0
@@ -376,7 +376,7 @@ def show_artist(artist_id):
 
   for row in artist_shows:
     show_event={}
-    show_event["venue_id"]=row.venues_id
+    show_event["venue_id"]=row.venue_id
     show_event["venue_name"]=row.name
     show_event["venue_image_link"]=row.image_link
     show_event["start_time"]=row.day_show.strftime("%m/%d/%Y, %H:%M")
@@ -560,8 +560,8 @@ def shows():
   # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
   event_query=db.session.\
-    query(Show.venues_id, Venue.name, Show.artist_id, Artist.name.label('artist_name'), Artist.image_link, Show.day_show).\
-    join(Venue, Show.venues_id== Venue.id).\
+    query(Show.venue_id, Venue.name, Show.artist_id, Artist.name.label('artist_name'), Artist.image_link, Show.day_show).\
+    join(Venue, Show.venue_id== Venue.id).\
     join(Artist, Show.artist_id==Artist.id).\
     filter(Show.day_show>=datetime.datetime.now()).\
     order_by(Show.day_show).\
@@ -581,7 +581,7 @@ def shows():
   for row in event_query:
     show_event={
 
-      "venue_id":row.venues_id,
+      "venue_id":row.venue_id,
       "venue_name": row.name,
       "artist_id":row.artist_id,
       "artist_name":row.artist_name,
