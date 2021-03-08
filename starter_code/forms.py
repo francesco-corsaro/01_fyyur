@@ -1,20 +1,22 @@
 from datetime import datetime
 from flask_wtf import Form
-from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, RadioField, TextAreaField
+from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, RadioField, TextAreaField, IntegerField
 from wtforms.validators import DataRequired, AnyOf, URL
 
 class ShowForm(Form):
-    artist_id = StringField(
-        'artist_id'
+    artist_id = IntegerField(
+        'artist_id',
+        validators=[DataRequired()]
     )
     # in my model its name is venues with s
 
-    venue_id = StringField(
-        'venue_id'
+    venue_id = IntegerField(
+        'venue_id',
+        validators=[DataRequired()]
     )
     #in my modle its name is day_show
     # original verson start_time
-    day_show = DateTimeField(
+    start_time = DateTimeField(
         'start_time',
         validators=[DataRequired()],
         default= datetime.today()

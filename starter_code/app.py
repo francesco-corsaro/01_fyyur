@@ -37,7 +37,8 @@ class Show(db.Model):
   artist_id = db.Column( db.Integer, db.ForeignKey('artists.id'))
   venue_id = db.Column( db.Integer, db.ForeignKey('venues.id' ))
   # extra data: the date when will be the show
-  day_show= db.Column( db.DateTime, nullable=False)
+  
+  start_time= db.Column( db.DateTime, nullable=False)
   # association
   venues= db.relationship('Venue',backref=db.backref('show_venues',  cascade="all, delete"))
   artists= db.relationship('Artist',backref=db.backref('show_artists',  cascade="all, delete"))
@@ -145,7 +146,7 @@ def venues():
       
       upcoming_shows=all_shows.\
         filter(Show.venue_id==info.id).\
-        filter(Show.day_show >= datetime.datetime.now())
+        filter(Show.start_time >= datetime.datetime.now())
 
       info_venue['num_upcoming_shows']= upcoming_shows.count()
 
@@ -166,9 +167,10 @@ def search_venues():
 
   corrispondences= Venue.query.filter(Venue.name.ilike('%{}%'.format(search_term )))
   for corrispondence in corrispondences:
-    my_obj= {}
-    my_obj['id']=corrispondence.id
-    my_obj['name']=corrispondence.name
+    my_obj= {
+      'id':corrispondence.id,
+      'name':corrispondence.name
+    }
     upcoming_shows=Show.query.filter(Show.venue_id == corrispondence.id )
     my_obj['num_upcoming_shows']=upcoming_shows.count()
     data.append(my_obj)
@@ -208,7 +210,7 @@ def show_venue(venue_id):
   }
 
   # we get values of show with artisti
-  data_show= db.session.query(Show.artist_id, Show.day_show, Artist.id, Artist.name, Artist.image_link).join(Artist).filter(Show.venue_id==venue_id).all()
+  data_show= db.session.query(Show.artist_id, Show.start_time, Artist.id, Artist.name, Artist.image_link).join(Artist).filter(Show.venue_id==venue_id).all()
   past_shows=[]
   past_shows_count=0
   upcoming_shows=[]
@@ -217,12 +219,13 @@ def show_venue(venue_id):
   # we assign values for the past and upcoming show
   for row in data_show:
     
-    show_event={}
-    show_event["artist_id"]=row.artist_id
-    show_event["artist_name"]=row.name
-    show_event["artist_image_link"]=row.image_link
-    show_event["start_time"]=row.day_show.strftime("%m/%d/%Y, %H:%M")
-    if row.day_show < datetime.datetime.now():
+    show_event={
+      "artist_id":row.artist_id,
+      "artist_name":row.name,
+      "artist_image_link":row.image_link,
+      "start_time":row.start_time.strftime("%m/%d/%Y, %H:%M")
+    }
+    if row.start_time < datetime.datetime.now():
       past_shows_count+=1
       past_shows.append(show_event )
     else:
@@ -254,23 +257,20 @@ def create_venue_submission():
   try:
     form = VenueForm()
     name=form.name.data
-    new_row = Venue(name=name)
+    new_row = Venue(
+      name=name,
+      city=form.city.data,
+      state=form.state.data,
+      address=form.address.data,
+      phone=form.phone.data,
+      genres=form.genres.data,
+      facebook_link=form.facebook_link.data,
+      image_link=form.image_link.data,
+      website=form.website.data,
+      seeking_talent= True if form.seeking_talent.data == 'True' else False,
+      seeking_description=form.seeking_description.data
+    )
     
-    new_row.city=form.city.data
-    new_row.state=form.state.data
-    new_row.address=form.address.data
-    new_row.phone=form.phone.data
-    new_row.genres=form.genres.data
-    new_row.facebook_link=form.facebook_link.data
-    new_row.image_link=form.image_link.data
-    new_row.website=form.website.data
-    if form.seeking_talent.data == 'True':
-      new_row.seeking_talent=True
-    else:
-      new_row.seeking_talent=False
-    new_row.seeking_description=form.seeking_description.data
-
-
     db.session.add(new_row)
     db.session.commit()
   except:
@@ -301,6 +301,7 @@ def delete_venue(venue_id):
     venue_delete=Venue.query.get(venue_id)
     db.session.delete(venue_delete)
     db.session.commit()
+    flash(' Venue ' + venue_delete.name + '  deleted.')
   except:
     db.session.rollback()
     print(sys.exc_info())
@@ -330,14 +331,19 @@ def search_artists():
   
   # artist_searched select Artists  
   artist_searched= Artist.query.filter(Artist.name.ilike('%{}%'.format(search_term )))
-  # shows_searched select the show filtered by Artist.name and the date of Show.day_show
-  shows_searched=db.session.query(Artist.name, Artist.id, Show.day_show, Show.artist_id).join(Artist).filter(Artist.name.ilike('%{}%'.format(search_term ))).filter(Show.day_show >= datetime.datetime.now())
+  # shows_searched select the show filtered by Artist.name and the date of Show.start_time
+  shows_searched=db.session.\
+    query(Artist.name, Artist.id, Show.start_time, Show.artist_id).\
+    join(Artist).\
+    filter(Artist.name.ilike('%{}%'.format(search_term ))).\
+    filter(Show.start_time >= datetime.datetime.now())
 
   for row in artist_searched:
-    myObj={}
-    myObj['id']=row.id
-    myObj['name']=row.name
-    myObj['num_upcoming_shows']= shows_searched.filter(Show.artist_id == row.id).count()
+    myObj={
+      'id':row.id,
+      'name':row.name,
+      'num_upcoming_shows': shows_searched.filter(Show.artist_id == row.id).count(),
+    }
     data.append(myObj)
 
   response={
@@ -367,7 +373,7 @@ def show_artist(artist_id):
     "image_link":data_artist.image_link
   }
 
-  artist_shows=db.session.query(Venue.id, Venue.name, Venue.image_link, Show.day_show, Show.artist_id ,Show.venue_id).join(Venue).filter(Show.artist_id==artist_id).all()
+  artist_shows=db.session.query(Venue.id, Venue.name, Venue.image_link, Show.start_time, Show.artist_id ,Show.venue_id).join(Venue).filter(Show.artist_id==artist_id).all()
 
   past_shows=[]
   past_shows_count=0
@@ -375,12 +381,13 @@ def show_artist(artist_id):
   upcoming_shows_count=0
 
   for row in artist_shows:
-    show_event={}
-    show_event["venue_id"]=row.venue_id
-    show_event["venue_name"]=row.name
-    show_event["venue_image_link"]=row.image_link
-    show_event["start_time"]=row.day_show.strftime("%m/%d/%Y, %H:%M")
-    if row.day_show < datetime.datetime.now():
+    show_event={
+      "venue_id":row.venue_id,
+      "venue_name":row.name,
+      "venue_image_link":row.image_link,
+      "start_time":row.start_time.strftime("%m/%d/%Y, %H:%M"),
+    }
+    if row.start_time < datetime.datetime.now():
       past_shows_count+=1
       past_shows.append(show_event )
     else:
@@ -429,9 +436,7 @@ def edit_artist_submission(artist_id):
       else:
         new_row.seeking_venue=False
       new_row.seeking_description=form.seeking_description.data
-
-
-    
+   
     db.session.commit()
   except:
     error=True
@@ -517,6 +522,7 @@ def create_artist_submission():
     form = ArtistForm()
 
     name=form.name.data
+    
     new_row = Artist(
       name=name,
       city=form.city.data,
@@ -529,6 +535,7 @@ def create_artist_submission():
       seeking_venue=True if form.seeking_venue.data =='True' else False,
       seeking_description=form.seeking_description.data
     )
+    print(type(form.seeking_venue.data))
 
     db.session.add(new_row)
     db.session.commit()
@@ -543,7 +550,7 @@ def create_artist_submission():
     abort(400)
   else:
       # on successful db insert, flash success
-    flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    flash('Artist ' + request.form['name'] + ' was successfully listed!')
     
     
   # TODO: on unsuccessful db insert, flash an error instead.
@@ -560,11 +567,11 @@ def shows():
   # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
   event_query=db.session.\
-    query(Show.venue_id, Venue.name, Show.artist_id, Artist.name.label('artist_name'), Artist.image_link, Show.day_show).\
+    query(Show.venue_id, Venue.name, Show.artist_id, Artist.name.label('artist_name'), Artist.image_link, Show.start_time).\
     join(Venue, Show.venue_id== Venue.id).\
     join(Artist, Show.artist_id==Artist.id).\
-    filter(Show.day_show>=datetime.datetime.now()).\
-    order_by(Show.day_show).\
+    filter(Show.start_time>=datetime.datetime.now()).\
+    order_by(Show.start_time).\
     all()
   
   data=[]
@@ -586,7 +593,7 @@ def shows():
       "artist_id":row.artist_id,
       "artist_name":row.artist_name,
       "artist_image_link":row.image_link,
-      "start_time":row.day_show.strftime("%m/%d/%Y, %H:%M"),
+      "start_time":row.start_time.strftime("%m/%d/%Y, %H:%M"),
       }
     data.append(show_event ) 
   
